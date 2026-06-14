@@ -1,6 +1,6 @@
 menuconfig VELOCIRAPTOR36_RGB_STATUS
     bool "Velociraptor36 RGB status flashes"
-    default y
+    default n
     depends on ZMK_RGB_UNDERGLOW && ZMK_BLE
     depends on !ZMK_SPLIT || ZMK_SPLIT_ROLE_CENTRAL
     help
