@@ -1,0 +1,91 @@
+name: Build ZMK firmware
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: zmkfirmware/zmk-build-arm:stable
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - board: nice_nano_v2
+            shield: velociraptor36_left
+            artifact-name: velociraptor36_left_studio
+            snippet: studio-rpc-usb-uart
+            cmake-args: -DCONFIG_ZMK_STUDIO=y
+          - board: nice_nano_v2
+            shield: velociraptor36_right
+            artifact-name: velociraptor36_right
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create build directory
+        run: echo "build_dir=$(mktemp -d)" >> "$GITHUB_ENV"
+
+      - name: Cache west modules
+        uses: actions/cache@v4
+        continue-on-error: true
+        with:
+          path: |
+            modules/
+            tools/
+            zephyr/
+            bootloader/
+            zmk/
+          key: ${{ runner.os }}-zmk-${{ hashFiles('firmware/zmk-config-velociraptor36/config/west.yml', 'firmware/zmk-config-velociraptor36/build.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-zmk-
+
+      - name: West Init
+        run: west init -l firmware/zmk-config-velociraptor36/config
+
+      - name: West Update
+        run: west update --fetch-opt=--filter=tree:0
+
+      - name: West Zephyr Export
+        run: west zephyr-export
+
+      - name: Build ${{ matrix.shield }}
+        shell: bash
+        run: |
+          extra_west_args=""
+          if [ -n "${{ matrix.snippet }}" ]; then
+            extra_west_args="-S ${{ matrix.snippet }}"
+          fi
+
+          west build \
+            -s zmk/app \
+            -d "$build_dir" \
+            -b "${{ matrix.board }}" \
+            $extra_west_args \
+            -- \
+            -DZMK_CONFIG="$GITHUB_WORKSPACE/firmware/zmk-config-velociraptor36/config" \
+            -DZMK_EXTRA_MODULES="$GITHUB_WORKSPACE/firmware/zmk-config-velociraptor36" \
+            -DSHIELD="${{ matrix.shield }}" \
+            ${{ matrix.cmake-args }}
+
+      - name: Rename artifact
+        run: |
+          mkdir "$build_dir/artifacts"
+          cp "$build_dir/zephyr/zmk.uf2" "$build_dir/artifacts/${{ matrix.artifact-name }}.uf2"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifact-${{ matrix.artifact-name }}
+          path: ${{ env.build_dir }}/artifacts
+
+  merge:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Merge artifacts
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: firmware
+          pattern: artifact-*
+          delete-merged: true
