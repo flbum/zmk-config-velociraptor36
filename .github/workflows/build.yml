@@ -24,32 +24,43 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create build directory
-        run: echo "build_dir=$(mktemp -d)" >> "$GITHUB_ENV"
+        run: |
+          echo "build_dir=$(mktemp -d)" >> "$GITHUB_ENV"
+          echo "base_dir=$(mktemp -d)" >> "$GITHUB_ENV"
+
+      - name: Copy config files to west workspace
+        run: |
+          mkdir -p "$base_dir/config"
+          cp -R firmware/zmk-config-velociraptor36/config/* "$base_dir/config/"
 
       - name: Cache west modules
         uses: actions/cache@v4
         continue-on-error: true
         with:
           path: |
-            modules/
-            tools/
-            zephyr/
-            bootloader/
-            zmk/
+            ${{ env.base_dir }}/modules/
+            ${{ env.base_dir }}/tools/
+            ${{ env.base_dir }}/zephyr/
+            ${{ env.base_dir }}/bootloader/
+            ${{ env.base_dir }}/zmk/
           key: ${{ runner.os }}-zmk-${{ hashFiles('firmware/zmk-config-velociraptor36/config/west.yml', 'firmware/zmk-config-velociraptor36/build.yaml') }}
           restore-keys: |
             ${{ runner.os }}-zmk-
 
       - name: West Init
-        run: west init -l firmware/zmk-config-velociraptor36/config
+        working-directory: ${{ env.base_dir }}
+        run: west init -l "$base_dir/config"
 
       - name: West Update
+        working-directory: ${{ env.base_dir }}
         run: west update --fetch-opt=--filter=tree:0
 
       - name: West Zephyr Export
+        working-directory: ${{ env.base_dir }}
         run: west zephyr-export
 
       - name: Build ${{ matrix.shield }}
+        working-directory: ${{ env.base_dir }}
         shell: bash
         run: |
           extra_west_args=""
@@ -63,7 +74,7 @@ jobs:
             -b "${{ matrix.board }}" \
             $extra_west_args \
             -- \
-            -DZMK_CONFIG="$GITHUB_WORKSPACE/firmware/zmk-config-velociraptor36/config" \
+            -DZMK_CONFIG="$base_dir/config" \
             -DZMK_EXTRA_MODULES="$GITHUB_WORKSPACE/firmware/zmk-config-velociraptor36" \
             -DSHIELD="${{ matrix.shield }}" \
             ${{ matrix.cmake-args }}
