@@ -19,6 +19,8 @@
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 
 #define RGB_EFFECT_SOLID 0
+#define NO_HOST_FLASH_INTERVAL_MS 5000
+#define STATUS_MONITOR_INTERVAL_MS 250
 
 static const struct zmk_led_hsb profile_colors[] = {
     {h : 0, s : 100, b : 80},   /* Profile 0: red */
@@ -27,15 +29,16 @@ static const struct zmk_led_hsb profile_colors[] = {
 };
 
 static const struct zmk_led_hsb power_color = {h : 0, s : 0, b : 80};
-static const struct zmk_led_hsb paired_color = {h : 180, s : 100, b : 80};
+static const struct zmk_led_hsb no_host_color = {h : 0, s : 100, b : 80};
 
 static struct k_work_delayable flash_work;
+static struct k_work_delayable monitor_work;
 static struct zmk_led_hsb flash_color;
 static uint8_t flash_steps_remaining;
 static uint8_t active_profile;
 static uint8_t last_profile = UINT8_MAX;
 static bool last_connected;
-static bool last_open = true;
+static int64_t last_no_host_flash_at;
 
 static bool profile_has_color(uint8_t profile) { return profile < ARRAY_SIZE(profile_colors); }
 
@@ -51,9 +54,15 @@ static void show_color(struct zmk_led_hsb color) {
 
 static void show_active_profile(void) { show_color(color_for_profile(active_profile)); }
 
+static bool active_profile_connected(void) { return zmk_ble_profile_is_connected(active_profile); }
+
 static void flash_handler(struct k_work *work) {
     if (flash_steps_remaining == 0) {
-        show_active_profile();
+        if (active_profile_connected()) {
+            show_active_profile();
+        } else {
+            zmk_rgb_underglow_off();
+        }
         return;
     }
 
@@ -67,6 +76,8 @@ static void flash_handler(struct k_work *work) {
     k_work_reschedule(&flash_work, K_MSEC(CONFIG_VELOCIRAPTOR36_RGB_STATUS_FLASH_MS));
 }
 
+static bool flash_in_progress(void) { return flash_steps_remaining > 0; }
+
 static void start_flash(struct zmk_led_hsb color, uint8_t flashes) {
     k_work_cancel_delayable(&flash_work);
 
@@ -75,6 +86,22 @@ static void start_flash(struct zmk_led_hsb color, uint8_t flashes) {
 
     show_color(flash_color);
     k_work_reschedule(&flash_work, K_MSEC(CONFIG_VELOCIRAPTOR36_RGB_STATUS_FLASH_MS));
+}
+
+static void monitor_handler(struct k_work *work) {
+    const bool connected = active_profile_connected();
+    const int64_t now = k_uptime_get();
+
+    if (connected && !last_connected) {
+        start_flash(color_for_profile(active_profile), 3);
+    } else if (!connected && !flash_in_progress() &&
+               now - last_no_host_flash_at >= NO_HOST_FLASH_INTERVAL_MS) {
+        last_no_host_flash_at = now;
+        start_flash(no_host_color, 2);
+    }
+
+    last_connected = connected;
+    k_work_reschedule(&monitor_work, K_MSEC(STATUS_MONITOR_INTERVAL_MS));
 }
 
 static int rgb_status_listener(const zmk_event_t *eh) {
@@ -86,18 +113,14 @@ static int rgb_status_listener(const zmk_event_t *eh) {
 
     const uint8_t profile = ev->index;
     const bool connected = zmk_ble_profile_is_connected(profile);
-    const bool open = zmk_ble_profile_is_open(profile);
     const bool profile_changed = profile != last_profile;
-    const bool paired = last_profile == profile && last_open && !open;
-    const bool connected_now = last_profile == profile && !last_connected && connected;
 
     active_profile = profile;
     last_profile = profile;
     last_connected = connected;
-    last_open = open;
 
-    if (paired || connected_now) {
-        start_flash(paired_color, 3);
+    if (connected && profile_has_color(profile)) {
+        start_flash(color_for_profile(profile), 3);
     } else if (profile_changed && profile_has_color(profile)) {
         start_flash(color_for_profile(profile), 2);
     }
@@ -110,13 +133,15 @@ ZMK_SUBSCRIPTION(velociraptor36_rgb_status, zmk_ble_active_profile_changed);
 
 static int rgb_status_init(void) {
     k_work_init_delayable(&flash_work, flash_handler);
+    k_work_init_delayable(&monitor_work, monitor_handler);
 
     active_profile = zmk_ble_active_profile_index();
     last_profile = active_profile;
     last_connected = zmk_ble_profile_is_connected(active_profile);
-    last_open = zmk_ble_profile_is_open(active_profile);
+    last_no_host_flash_at = k_uptime_get();
 
     start_flash(power_color, 3);
+    k_work_schedule(&monitor_work, K_MSEC(STATUS_MONITOR_INTERVAL_MS));
 
     return 0;
 }

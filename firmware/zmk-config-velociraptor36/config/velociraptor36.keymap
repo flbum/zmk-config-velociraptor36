@@ -25,54 +25,74 @@
 #include <dt-bindings/zmk/outputs.h>
 #include <dt-bindings/zmk/rgb.h>
 
+&mt {
+    flavor = "tap-preferred";
+    tapping-term-ms = <170>;
+    quick-tap-ms = <150>;
+    require-prior-idle-ms = <120>;
+};
+
+&lt {
+    tapping-term-ms = <170>;
+    quick-tap-ms = <150>;
+};
+
 / {
     combos {
         compatible = "zmk,combos";
 
         combo_as_bslash {
-            timeout-ms = <50>;
+            timeout-ms = <35>;
+            require-prior-idle-ms = <120>;
             key-positions = <10 11>;
             bindings = <&kp LS(BSLH)>;
         };
 
         combo_rt_9 {
-            timeout-ms = <50>;
+            timeout-ms = <35>;
+            require-prior-idle-ms = <120>;
             key-positions = <3 4>;
             bindings = <&kp LPAR>;
         };
 
         combo_fg_lbrk {
-            timeout-ms = <50>;
+            timeout-ms = <35>;
+            require-prior-idle-ms = <120>;
             key-positions = <13 14>;
             bindings = <&kp LBKT>;
         };
 
         combo_vb_lbkt {
-            timeout-ms = <50>;
+            timeout-ms = <35>;
+            require-prior-idle-ms = <120>;
             key-positions = <23 24>;
             bindings = <&kp LS(LBKT)>;
         };
 
         combo_yu_0 {
-            timeout-ms = <50>;
+            timeout-ms = <35>;
+            require-prior-idle-ms = <120>;
             key-positions = <5 6>;
             bindings = <&kp RPAR>;
         };
 
         combo_hj_rbrk {
-            timeout-ms = <50>;
+            timeout-ms = <35>;
+            require-prior-idle-ms = <120>;
             key-positions = <15 16>;
             bindings = <&kp RBKT>;
         };
 
         combo_nm_rbkt {
-            timeout-ms = <50>;
+            timeout-ms = <35>;
+            require-prior-idle-ms = <120>;
             key-positions = <25 26>;
             bindings = <&kp LS(RBKT)>;
         };
 
         combo_jk_esc {
-            timeout-ms = <50>;
+            timeout-ms = <35>;
+            require-prior-idle-ms = <120>;
             key-positions = <16 17>;
             bindings = <&kp ESC>;
         };
