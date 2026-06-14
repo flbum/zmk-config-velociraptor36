@@ -17,6 +17,7 @@
 #include <zmk/event_manager.h>
 #include <zmk/events/ble_active_profile_changed.h>
 #include <zmk/events/position_state_changed.h>
+#include <zmk/events/split_peripheral_status_changed.h>
 #include <zmk/rgb_underglow.h>
 
 LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
@@ -117,7 +118,7 @@ static void sunrise_handler(struct k_work *work) {
     if (sunrise_step >= ARRAY_SIZE(sunrise_colors)) {
 #if !IS_ENABLED(CONFIG_ZMK_SPLIT) || IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
         if (active_profile_connected()) {
-            start_flash(color_for_profile(active_profile), 3);
+            show_active_profile();
             return;
         }
 #endif
@@ -183,13 +184,24 @@ static void monitor_handler(struct k_work *work) {
 }
 
 static int rgb_status_listener(const zmk_event_t *eh) {
-    const struct zmk_ble_active_profile_changed *ev = as_zmk_ble_active_profile_changed(eh);
+    const struct zmk_ble_active_profile_changed *profile_ev =
+        as_zmk_ble_active_profile_changed(eh);
+    const struct zmk_split_peripheral_status_changed *split_ev =
+        as_zmk_split_peripheral_status_changed(eh);
 
-    if (ev == NULL) {
+    if (split_ev != NULL) {
+        if (split_ev->connected) {
+            show_idle_status();
+        }
+
         return ZMK_EV_EVENT_BUBBLE;
     }
 
-    const uint8_t profile = ev->index;
+    if (profile_ev == NULL) {
+        return ZMK_EV_EVENT_BUBBLE;
+    }
+
+    const uint8_t profile = profile_ev->index;
     const bool connected = zmk_ble_profile_is_connected(profile);
     const bool profile_changed = profile != last_profile;
 
@@ -208,6 +220,7 @@ static int rgb_status_listener(const zmk_event_t *eh) {
 
 ZMK_LISTENER(velociraptor36_rgb_status, rgb_status_listener);
 ZMK_SUBSCRIPTION(velociraptor36_rgb_status, zmk_ble_active_profile_changed);
+ZMK_SUBSCRIPTION(velociraptor36_rgb_status, zmk_split_peripheral_status_changed);
 #endif
 
 static int rgb_status_init(void) {
