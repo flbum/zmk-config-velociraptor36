@@ -23,6 +23,7 @@
 #include <dt-bindings/zmk/bt.h>
 #include <dt-bindings/zmk/pointing.h>
 #include <dt-bindings/zmk/outputs.h>
+#include <dt-bindings/zmk/rgb.h>
 
 / {
     combos {
@@ -129,7 +130,7 @@
         adjust_layer {
             display-name = "Adjust";
             bindings = <
-    &kp F1          &studio_unlock  &kp F3          &kp F4          &kp F5          &kp N1          &kp N2          &kp N3          &kp N4          &kp N5
+    &kp F1          &studio_unlock  &kp F3          &kp F4          &rgb_ug RGB_TOG &kp N1          &kp N2          &kp N3          &kp N4          &kp N5
     &kp F6          &kp F7          &kp F8          &kp F9          &kp F10         &kp C_MUTE      &kp C_VOL_DN    &kp C_VOL_UP    &kp C_PP        &none
     &bt BT_SEL 0    &bt BT_SEL 1    &bt BT_SEL 2    &bt BT_CLR      &none           &none           &kp C_PREV      &kp C_NEXT      &kp C_STOP      &none
     &trans          &trans          &trans          &trans          &trans          &trans          &trans          &out OUT_USB    &trans
