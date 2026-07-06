@@ -12,9 +12,11 @@
 #include <zephyr/sys/util.h>
 
 #include <dt-bindings/zmk/rgb.h>
+#include <zmk/activity.h>
 #include <zmk/behavior.h>
 #include <zmk/ble.h>
 #include <zmk/event_manager.h>
+#include <zmk/events/activity_state_changed.h>
 #include <zmk/events/ble_active_profile_changed.h>
 #include <zmk/events/position_state_changed.h>
 #include <zmk/events/split_peripheral_status_changed.h>
@@ -27,21 +29,21 @@ LOG_MODULE_DECLARE(zmk, CONFIG_ZMK_LOG_LEVEL);
 #define SUNRISE_FRAME_MS 375
 
 static const struct zmk_led_hsb profile_colors[] = {
-    {h : 0, s : 100, b : 80},   /* Profile 0: red */
-    {h : 120, s : 100, b : 80}, /* Profile 1: green */
-    {h : 240, s : 100, b : 80}, /* Profile 2: blue */
+    {h : 0, s : 100, b : 25},   /* Profile 0: red */
+    {h : 120, s : 100, b : 25}, /* Profile 1: green */
+    {h : 240, s : 100, b : 25}, /* Profile 2: blue */
 };
 
-static const struct zmk_led_hsb no_host_color = {h : 0, s : 100, b : 80};
+static const struct zmk_led_hsb no_host_color = {h : 0, s : 100, b : 25};
 static const struct zmk_led_hsb sunrise_colors[] = {
-    {h : 300, s : 100, b : 70}, /* magenta */
-    {h : 325, s : 100, b : 75}, /* pink */
-    {h : 350, s : 100, b : 80}, /* rose */
-    {h : 12, s : 100, b : 80},  /* red-orange */
-    {h : 24, s : 100, b : 85},  /* orange */
-    {h : 36, s : 100, b : 85},  /* amber */
-    {h : 48, s : 90, b : 85},   /* gold */
-    {h : 24, s : 55, b : 80},   /* peach */
+    {h : 300, s : 100, b : 20}, /* magenta */
+    {h : 325, s : 100, b : 22}, /* pink */
+    {h : 350, s : 100, b : 24}, /* rose */
+    {h : 12, s : 100, b : 25},  /* red-orange */
+    {h : 24, s : 100, b : 27},  /* orange */
+    {h : 36, s : 100, b : 28},  /* amber */
+    {h : 48, s : 90, b : 30},   /* gold */
+    {h : 24, s : 55, b : 25},   /* peach */
 };
 
 static struct k_work_delayable flash_work;
@@ -57,6 +59,8 @@ static uint8_t active_profile;
 static uint8_t last_profile = UINT8_MAX;
 static bool last_connected;
 static int64_t last_no_host_flash_at;
+static bool activity_idle;
+static bool rgb_enabled_before_idle = true;
 #endif
 
 static bool profile_has_color(uint8_t profile) { return profile < ARRAY_SIZE(profile_colors); }
@@ -107,6 +111,11 @@ static bool active_profile_connected(void) {
 }
 
 static void show_idle_status(void) {
+    if (activity_idle) {
+        invoke_rgb(RGB_OFF_CMD, 0);
+        return;
+    }
+
     if (active_profile_connected()) {
         show_active_profile();
     } else {
@@ -171,6 +180,10 @@ static void monitor_handler(struct k_work *work) {
     const bool connected = active_profile_connected();
     const int64_t now = k_uptime_get();
 
+    if (activity_idle) {
+        goto reschedule;
+    }
+
     if (connected && !last_connected) {
         start_flash(color_for_profile(active_profile), 3);
     } else if (!connected && !flash_in_progress() &&
@@ -180,6 +193,7 @@ static void monitor_handler(struct k_work *work) {
     }
 
     last_connected = connected;
+reschedule:
     k_work_reschedule(&monitor_work, K_MSEC(STATUS_MONITOR_INTERVAL_MS));
 }
 
@@ -188,10 +202,39 @@ static int rgb_status_listener(const zmk_event_t *eh) {
         as_zmk_ble_active_profile_changed(eh);
     const struct zmk_split_peripheral_status_changed *split_ev =
         as_zmk_split_peripheral_status_changed(eh);
+    const struct zmk_activity_state_changed *activity_ev = as_zmk_activity_state_changed(eh);
+
+    if (activity_ev != NULL) {
+        if (activity_ev->state == ZMK_ACTIVITY_ACTIVE) {
+            if (activity_idle) {
+                activity_idle = false;
+                last_no_host_flash_at = k_uptime_get();
+
+                if (rgb_enabled_before_idle) {
+                    invoke_rgb(RGB_ON_CMD, 0);
+                }
+            }
+        } else if (!activity_idle) {
+            bool enabled = false;
+            zmk_rgb_underglow_get_state(&enabled);
+            rgb_enabled_before_idle = enabled;
+            activity_idle = true;
+
+            k_work_cancel_delayable(&flash_work);
+            k_work_cancel_delayable(&sunrise_work);
+            invoke_rgb(RGB_OFF_CMD, 0);
+        }
+
+        return ZMK_EV_EVENT_BUBBLE;
+    }
 
     if (split_ev != NULL) {
         if (split_ev->connected) {
-            show_idle_status();
+            if (sunrise_step > 0 && sunrise_step <= ARRAY_SIZE(sunrise_colors)) {
+                show_color(sunrise_colors[sunrise_step - 1]);
+            } else {
+                show_idle_status();
+            }
         }
 
         return ZMK_EV_EVENT_BUBBLE;
@@ -219,6 +262,7 @@ static int rgb_status_listener(const zmk_event_t *eh) {
 }
 
 ZMK_LISTENER(velociraptor36_rgb_status, rgb_status_listener);
+ZMK_SUBSCRIPTION(velociraptor36_rgb_status, zmk_activity_state_changed);
 ZMK_SUBSCRIPTION(velociraptor36_rgb_status, zmk_ble_active_profile_changed);
 ZMK_SUBSCRIPTION(velociraptor36_rgb_status, zmk_split_peripheral_status_changed);
 #endif
