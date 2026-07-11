@@ -6,6 +6,7 @@ dongle to operate.
 ## Firmware artifacts
 
 - `velociraptor36_dongle_studio.uf2`: spare nice!nano v2 dongle
+- `velociraptor36_dongle_smoke.uf2`: diagnostic dongle without OLED or Studio
 - `velociraptor36_left_peripheral.uf2`: left keyboard half
 - `velociraptor36_right_peripheral.uf2`: right keyboard half
 - `settings_reset_nice_nano_v2.uf2`: temporary reset image used on all three controllers
@@ -18,6 +19,10 @@ dongle to operate.
 4. Flash `velociraptor36_left_peripheral.uf2` to the left half, then power it on near the dongle.
 5. Flash `velociraptor36_right_peripheral.uf2` to the right half, then power it on near the dongle.
 6. Allow several seconds for both peripherals to bond with the dongle.
+
+If the OLED/Studio dongle keeps flashing the onboard blue LED and never appears over USB, flash
+`velociraptor36_dongle_smoke.uf2` to the dongle after settings reset. If the smoke build works,
+the remaining fault is in the OLED/Studio layer, not the split central role.
 
 The settings-reset image is only required when changing split roles, replacing a controller, or
 recovering from broken split bonding. Normal firmware updates do not require it.
