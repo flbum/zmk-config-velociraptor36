@@ -24,7 +24,8 @@ recovering from broken split bonding. Normal firmware updates do not require it.
 
 ## RGB power behavior
 
-- Status and profile RGB commands originate on the dongle and apply to both halves.
+- Status and profile RGB commands are temporarily disabled on the dongle while OLED/split
+  central bring-up is being debugged.
 - Brightness is capped at 30 percent.
 - After 30 seconds without key or encoder activity, both halves temporarily turn RGB off.
 - Activity restores RGB only when it was enabled before entering idle.
