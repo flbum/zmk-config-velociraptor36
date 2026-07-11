@@ -87,6 +87,13 @@ jobs:
             -DSHIELD="${{ matrix.shield }}" \
             ${{ matrix.cmake-args }}
 
+      - name: Show split role ${{ matrix.shield }}
+        if: ${{ !cancelled() }}
+        run: |
+          if [ -f "$build_dir/zephyr/.config" ]; then
+            grep -E "CONFIG_(ZMK_USB|ZMK_STUDIO|ZMK_SPLIT=y|ZMK_SPLIT_ROLE_CENTRAL|ZMK_SPLIT_BLE_CENTRAL_PERIPHERALS)" "$build_dir/zephyr/.config" || true
+          fi
+
       - name: Rename artifact
         run: |
           mkdir "$build_dir/artifacts"
