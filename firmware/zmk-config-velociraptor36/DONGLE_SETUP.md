@@ -33,5 +33,9 @@ recovering from broken split bonding. Normal firmware updates do not require it.
 
 ## OLED
 
-Peripheral battery fetching and proxying are enabled on the dongle. The OLED overlay and custom
-two-battery widget still require the display model, resolution, I2C address, and chosen SDA/SCL pins.
+The dongle firmware has first-pass support for the common 0.91 inch SSD1306 I2C OLED
+at address `0x3C` and `128x32` resolution. Wire `SCK`/`SCL` to nice!nano `P0.20`,
+`SDA` to `P0.17`, `GND` to `GND`, and `VCC` to `VCC`/`3V3`.
+
+The current OLED setup uses ZMK's built-in status screen. A custom two-battery widget can
+be added once the first display build confirms the module address and resolution.
