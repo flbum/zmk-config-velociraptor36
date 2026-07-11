@@ -7,6 +7,7 @@ dongle to operate.
 
 - `velociraptor36_dongle_studio.uf2`: spare nice!nano v2 dongle
 - `velociraptor36_dongle_smoke.uf2`: diagnostic dongle without OLED or Studio
+- `velociraptor36_usb_smoke.uf2`: diagnostic one-key USB-only firmware
 - `velociraptor36_left_peripheral.uf2`: left keyboard half
 - `velociraptor36_right_peripheral.uf2`: right keyboard half
 - `settings_reset_nice_nano_v2.uf2`: temporary reset image used on all three controllers
@@ -23,6 +24,10 @@ dongle to operate.
 If the OLED/Studio dongle keeps flashing the onboard blue LED and never appears over USB, flash
 `velociraptor36_dongle_smoke.uf2` to the dongle after settings reset. If the smoke build works,
 the remaining fault is in the OLED/Studio layer, not the split central role.
+
+If the dongle smoke build also fails to appear as a USB device, flash
+`velociraptor36_usb_smoke.uf2`. This image does not implement the keyboard; it only verifies
+that the nice!nano can run a ZMK USB app instead of staying in bootloader.
 
 The settings-reset image is only required when changing split roles, replacing a controller, or
 recovering from broken split bonding. Normal firmware updates do not require it.

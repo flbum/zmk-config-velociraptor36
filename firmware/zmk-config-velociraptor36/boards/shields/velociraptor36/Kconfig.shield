@@ -9,3 +9,6 @@ config SHIELD_VELOCIRAPTOR36_DONGLE
 
 config SHIELD_VELOCIRAPTOR36_SMOKE
     def_bool $(shields_list_contains,velociraptor36_smoke)
+
+config SHIELD_VELOCIRAPTOR36_USB_SMOKE
+    def_bool $(shields_list_contains,velociraptor36_usb_smoke)
