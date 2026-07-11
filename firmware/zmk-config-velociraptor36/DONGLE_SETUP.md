@@ -6,7 +6,6 @@ dongle to operate.
 ## Firmware artifacts
 
 - `velociraptor36_dongle_studio.uf2`: spare nice!nano v2 dongle
-- `velociraptor36_dongle_oled_usb.uf2`: same OLED dongle without ZMK Studio, useful for USB bring-up testing
 - `velociraptor36_left_peripheral.uf2`: left keyboard half
 - `velociraptor36_right_peripheral.uf2`: right keyboard half
 - `settings_reset_nice_nano_v2.uf2`: temporary reset image used on all three controllers
@@ -25,8 +24,7 @@ recovering from broken split bonding. Normal firmware updates do not require it.
 
 ## RGB power behavior
 
-- Status and profile RGB commands are temporarily disabled on the dongle while OLED/split
-  central bring-up is being debugged.
+- Status and profile RGB commands are temporarily disabled while the dongle setup is stabilized.
 - Brightness is capped at 30 percent.
 - After 30 seconds without key or encoder activity, both halves temporarily turn RGB off.
 - Activity restores RGB only when it was enabled before entering idle.
@@ -35,9 +33,6 @@ recovering from broken split bonding. Normal firmware updates do not require it.
 
 ## OLED
 
-The dongle firmware has first-pass support for the common 0.91 inch SSD1306 I2C OLED
-at address `0x3C` and `128x32` resolution. Wire `SCK`/`SCL` to nice!nano `P0.20`,
-`SDA` to `P0.17`, `GND` to `GND`, and `VCC` to `VCC`/`3V3`.
-
-The current OLED setup uses ZMK's built-in status screen. A custom two-battery widget can
-be added once the first display build confirms the module address and resolution.
+OLED support is paused until the basic dongle, left, right, and ZMK Studio workflow is stable.
+The display hardware can stay disconnected for now. Once the keyboard is working reliably, add
+the OLED back as a separate change.
