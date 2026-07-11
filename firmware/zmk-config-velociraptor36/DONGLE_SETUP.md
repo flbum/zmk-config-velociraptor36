@@ -25,14 +25,15 @@ recovering from broken split bonding. Normal firmware updates do not require it.
 ## RGB power behavior
 
 - Status and profile RGB commands are temporarily disabled while the dongle setup is stabilized.
-- Brightness is capped at 30 percent.
-- After 30 seconds without key or encoder activity, both halves temporarily turn RGB off.
-- Activity restores RGB only when it was enabled before entering idle.
-- A manual RGB off therefore remains off after idle/wake.
+- The dongle no longer creates a virtual RGB strip; this keeps USB bring-up simpler.
+- Basic underglow control can be restored after the dongle enumerates reliably.
 - Both halves enter deep sleep after 15 minutes without activity.
 
 ## OLED
 
-OLED support is paused until the basic dongle, left, right, and ZMK Studio workflow is stable.
-The display hardware can stay disconnected for now. Once the keyboard is working reliably, add
-the OLED back as a separate change.
+The dongle firmware includes first-pass support for the common 0.91 inch SSD1306 I2C OLED
+at address `0x3C` and `128x32` resolution. Wire `SCK`/`SCL` to nice!nano `P0.20`,
+`SDA` to `P0.17`, `GND` to `GND`, and `VCC` to `VCC`/`3V3`.
+
+The dongle overlay is now a standalone dongle shield: mock kscan, physical layout, matrix
+transform, and OLED only. It no longer includes the keyboard-half GPIO/encoder hardware.

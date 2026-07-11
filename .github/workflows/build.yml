@@ -87,20 +87,6 @@ jobs:
             -DSHIELD="${{ matrix.shield }}" \
             ${{ matrix.cmake-args }}
 
-      - name: Show RGB Kconfig ${{ matrix.shield }}
-        if: ${{ !cancelled() }}
-        run: |
-          if [ -f "$build_dir/zephyr/.config" ]; then
-            grep -E "CONFIG_(ZMK_RGB_UNDERGLOW|WS2812_STRIP|VELOCIRAPTOR36_RGB_STATUS|SPI)" "$build_dir/zephyr/.config" || true
-          fi
-
-      - name: Show RGB devicetree ${{ matrix.shield }}
-        if: ${{ !cancelled() }}
-        run: |
-          if [ -f "$build_dir/zephyr/zephyr.dts" ]; then
-            grep -n -A35 -B10 "zmk,underglow\\|ws2812\\|spi3_default\\|SPIM_MOSI" "$build_dir/zephyr/zephyr.dts" || true
-          fi
-
       - name: Rename artifact
         run: |
           mkdir "$build_dir/artifacts"
