@@ -47,12 +47,14 @@ static const struct zmk_led_hsb sunrise_colors[] = {
 };
 
 static struct k_work_delayable flash_work;
+static struct k_work_delayable startup_work;
 static struct k_work_delayable sunrise_work;
 #if !IS_ENABLED(CONFIG_ZMK_SPLIT) || IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
 static struct k_work_delayable monitor_work;
 #endif
 static struct zmk_led_hsb flash_color;
 static uint8_t flash_steps_remaining;
+static bool startup_done;
 static uint8_t sunrise_step;
 static uint8_t active_profile;
 #if !IS_ENABLED(CONFIG_ZMK_SPLIT) || IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
@@ -175,8 +177,16 @@ static void start_sunrise(void) {
     sunrise_handler(NULL);
 }
 
+static void startup_handler(struct k_work *work) {
+    startup_done = true;
+    start_sunrise();
+}
+
 #if !IS_ENABLED(CONFIG_ZMK_SPLIT) || IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
 static void monitor_handler(struct k_work *work) {
+    if (!startup_done) {
+        goto reschedule;
+    }
     const bool connected = active_profile_connected();
     const int64_t now = k_uptime_get();
 
@@ -269,6 +279,7 @@ ZMK_SUBSCRIPTION(velociraptor36_rgb_status, zmk_split_peripheral_status_changed)
 
 static int rgb_status_init(void) {
     k_work_init_delayable(&flash_work, flash_handler);
+    k_work_init_delayable(&startup_work, startup_handler);
     k_work_init_delayable(&sunrise_work, sunrise_handler);
 
 #if !IS_ENABLED(CONFIG_ZMK_SPLIT) || IS_ENABLED(CONFIG_ZMK_SPLIT_ROLE_CENTRAL)
@@ -279,10 +290,10 @@ static int rgb_status_init(void) {
     last_connected = zmk_ble_profile_is_connected(active_profile);
     last_no_host_flash_at = k_uptime_get();
 
-    start_sunrise();
+    k_work_schedule(&startup_work, K_MSEC(1500));
     k_work_schedule(&monitor_work, K_MSEC(STATUS_MONITOR_INTERVAL_MS));
 #else
-    start_sunrise();
+    k_work_schedule(&startup_work, K_MSEC(1500));
 #endif
 
     return 0;
