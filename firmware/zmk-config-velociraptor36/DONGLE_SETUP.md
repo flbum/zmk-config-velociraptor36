@@ -6,6 +6,7 @@ dongle to operate.
 ## Firmware artifacts
 
 - `velociraptor36_dongle_studio.uf2`: spare nice!nano v2 dongle
+- `velociraptor36_dongle_oled_usb.uf2`: same OLED dongle without ZMK Studio, useful for USB bring-up testing
 - `velociraptor36_left_peripheral.uf2`: left keyboard half
 - `velociraptor36_right_peripheral.uf2`: right keyboard half
 - `settings_reset_nice_nano_v2.uf2`: temporary reset image used on all three controllers
