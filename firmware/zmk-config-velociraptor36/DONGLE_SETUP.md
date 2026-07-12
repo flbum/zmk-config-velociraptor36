@@ -8,7 +8,7 @@ The repo intentionally builds only the normal firmware set:
 
 - `velociraptor36_left.uf2`: left keyboard half
 - `velociraptor36_right.uf2`: right keyboard half
-- `velociraptor36_dongle.uf2`: USB dongle with OLED and ZMK Studio
+- `velociraptor36_dongle.uf2`: plain USB dongle
 - `settings_reset_keyboard.uf2`: temporary reset image for the keyboard halves
 - `settings_reset_dongle.uf2`: temporary reset image for the dongle
 
@@ -36,7 +36,10 @@ recovering from broken split bonding. Normal firmware updates do not require it.
 
 ## OLED wiring
 
-The dongle firmware expects a common 0.91 inch SSD1306 I2C OLED at address `0x3C`, 128x32:
+OLED support is intentionally disabled while the dongle boot issue is being isolated. Once
+`velociraptor36_dongle.uf2` reliably appears as a USB keyboard, the OLED can be added back.
+
+Expected OLED wiring for the next step:
 
 - `SCK`/`SCL` -> `P0.20`
 - `SDA` -> `P0.17`
@@ -45,7 +48,3 @@ The dongle firmware expects a common 0.91 inch SSD1306 I2C OLED at address `0x3C
 
 If the OLED has static, first verify that `VCC` is actually 3.3V. Some Pro Micro nRF52840 clones
 require a solder bridge on the back of the board before the `3.3V` pin is powered.
-
-## RGB
-
-The halves keep normal ZMK underglow support. The dongle does not control RGB directly.
