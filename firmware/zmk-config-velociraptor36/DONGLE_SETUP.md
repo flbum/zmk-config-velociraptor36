@@ -12,6 +12,15 @@ dongle to operate.
 - `velociraptor36_right_peripheral.uf2`: right keyboard half
 - `settings_reset_nice_nano_v2.uf2`: temporary reset image used on all three controllers
 
+Boards whose bootloader `INFO_UF2.TXT` says `Model: nice!nano` and
+`Board-ID: nRF52840-nicenano` should use the `nice_nano` artifacts instead of
+the `nice_nano_v2` artifacts:
+
+- `settings_reset_nice_nano.uf2`
+- `velociraptor36_usb_smoke_nice_nano.uf2`
+- `velociraptor36_dongle_smoke_nice_nano.uf2`
+- `velociraptor36_dongle_studio_nice_nano.uf2`
+
 ## First-time pairing
 
 1. Turn off both keyboard halves.
