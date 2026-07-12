@@ -1,5 +1,0 @@
-/*
- * LED data pins are side-specific.
- *
- * See velociraptor36_left.overlay and velociraptor36_right.overlay.
- */
